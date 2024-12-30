@@ -63,13 +63,24 @@ def abc_from_R(R):
 
     # map R = {E, i} * Rot, where i = inversion 
     c = np.linalg.det(R)  # Compute the determinant of R
-    Rot = R / c  # Normalize the rotation matrix
-    # 
+    Rot = R * np.sign(c) # Normalize the rotation matrix
+    if (abs(Rot[2, 2])>1.0 and abs(Rot[2, 2])<1.0 + 1e-10):
+        Rot[2, 2] = 1.0 - 1e-12
+
+    beta = np.arccos(Rot[2, 2])  # Calculate beta
+    if Rot[2,2]>1.0 - 1e-6:
+        alpha = np.arccos(Rot[0, 0] )  
+        gamma = 0.0
+        return np.array([alpha, beta, gamma])  # Return the Euler angles
+    if Rot[2,2]<-1.0 + 1e-6:
+        alpha = np.arccos(Rot[0, 0] )  
+        gamma = 0.0
+        return np.array([alpha, beta, gamma])  # Return the Euler angles
     alpha = np.arctan(-Rot[0, 2] / Rot[1, 2])  # Calculate alpha
     beta = np.arccos(Rot[2, 2])  # Calculate beta
     gamma = np.arctan(Rot[2, 0] / Rot[2, 1])  # Calculate gamma
     return np.array([alpha, beta, gamma])  # Return the Euler angles
-
+    
 from scipy.special import sph_harm
 class sphericalHarmon:
     
@@ -124,6 +135,15 @@ class sphericalHarmon:
         return
     
     def WignerD(self, alpha, beta, gamma):
+        D = wignerD_FromEuler(self, a, b, c)
+        D_S = np.conj(self.S@(np.conj(D)@self.iS))
+        if self.real:
+            return D_S.real 
+        return D_S
+    
+    def WignerD_fromR(self, R):
+        a,b,c = abc_from_R(R)
+        #print('alpha, beta, gamma = ',a,b,c)
         D = wignerD_FromEuler(self, a, b, c)
         D_S = np.conj(self.S@(np.conj(D)@self.iS))
         if self.real:
@@ -226,7 +246,6 @@ def wignerD_FromR(SPH:sphericalHarmon, R):
     D_l = (c)**(SPH.l) * wignerD_FromEuler(SPH, alpha, beta, gamma)
     return D_l
 
-
 if __name__ == '__main__':
     #test 
     a, b ,c = np.random.random(3)
@@ -275,10 +294,11 @@ if __name__ == '__main__':
         rvec = np.random.random(3)
         rvec = np.array([0,0,1])
         rvec = rvec/np.linalg.norm(rvec)
-        rvec_rot =R@rvec
+        rvec_rot = R@rvec
         Yl_unrot = Y2( rvec )
         Yl_rot = Y2( rvec_rot )
-        Dl_R =  Y2.WignerD(a, b, c)
+        #Dl_R =  Y2.WignerD(a, b, c)
+        Dl_R =  Y2.WignerD_fromR(R)
         error = Yl_rot - np.conj(Dl_R)@Yl_unrot
         print(f'L{l}: error = {np.abs(error).max()}')
         if np.abs(error).max()>1e-10:
