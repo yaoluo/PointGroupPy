@@ -73,15 +73,25 @@ def abc_from_R(R):
 from scipy.special import sph_harm
 class sphericalHarmon:
     
-    def __init__(self, l):
+    def __init__(self, l, convention = 'original'):
         self.l = l 
         self.m = np.arange(-l,l+1)
-        print('m = ',self.m)
+        self.S = np.eye(2*l+1)
+        self.iS = self.S + 0 
+        if convention=='real':
+            self.convenstion_real()
+        elif convention=='original':
+            self.real = False 
+        else:
+            raise ValueError('un-surpport convention encountered@sphericalHarmon')
         return 
     
     def Yl(self, theta, phi):
         ylm = np.array([sph_harm(m, l, phi, theta) for m in range(-l, l + 1)])
-        return ylm
+        ylm_conv = self.S@ylm
+        if self.real: 
+            return  ylm_conv.real 
+        return ylm_conv
     
     def __call__(self, rvec):
         rvec = rvec / np.linalg.norm(rvec)
@@ -93,6 +103,32 @@ class sphericalHarmon:
         phi = np.sign(y) * np.arccos(x / (x**2+y**2)**0.5)
         return self.Yl(theta, phi)
     
+    def convenstion_real(self):
+        #m<0, Real convention of Ylm
+        l = self.l
+        S = np.complex128(np.zeros([l*2+1,l*2+1]))
+        i = 0 
+        for m in self.m:
+            if m<0:
+                S[i,m+l] = 1j/(2**0.5) 
+                S[i,-m+l] = -1j/(2**0.5)  * (-1)**(2*l+m) 
+            if m>0:
+                S[i,m+l] = 1/(2**0.5) 
+                S[i,-m+l] = 1/(2**0.5)  * (-1)**(2*l+m) 
+            if m ==0:
+                S[i,m+l] = 1
+            i += 1
+        self.S = S
+        self.iS = np.linalg.inv(S)
+        self.real = True 
+        return
+    
+    def WignerD(self, alpha, beta, gamma):
+        D = wignerD_FromEuler(self, a, b, c)
+        D_S = np.conj(self.S@(np.conj(D)@self.iS))
+        if self.real:
+            return D_S.real 
+        return D_S
     
 #drdrqC$v93HU6*w， password for GEM
 from math import factorial
@@ -210,10 +246,11 @@ if __name__ == '__main__':
         raise ValueError('abc_from_R not consistent with R_from_abc')
     
     # [3] test l 
+    print(f'test rotating Ylm with wigner D matrix, using original convention')
     for l in [1,2,3,4,5]:
         a, b ,c = np.random.random(3)
         R = R_from_abc(a,b,c)
-        Y2 = sphericalHarmon(l)
+        Y2 = sphericalHarmon(l, convention = 'original')
         #theta, phi = np.random.random(2)
         rvec = np.random.random(3)
         rvec = np.array([0,0,1])
@@ -221,10 +258,29 @@ if __name__ == '__main__':
         rvec_rot =R@rvec
         Yl_unrot = Y2( rvec )
         Yl_rot = Y2( rvec_rot )
-        Dl_R =  wignerD_FromEuler(Y2, a, b, c)
+        Dl_R =   Y2.WignerD(a, b, c)
         error = Yl_rot - np.conj(Dl_R)@Yl_unrot
         print(f'L{l}: error = {np.abs(error).max()}')
         if np.abs(error).max()>1e-10:
             raise ValueError('Wigner D matrix error')
-
+    #test new convention 
+    # [3] test l 
+    print(f'test rotating Ylm with wigner D matrix, using real convention')
+    for l in [1,2,3,4,5]:
+        a, b ,c = np.random.random(3)
+        R = R_from_abc(a,b,c)
+        Y2 = sphericalHarmon(l)
+        Y2.convenstion_real()
+        #theta, phi = np.random.random(2)
+        rvec = np.random.random(3)
+        rvec = np.array([0,0,1])
+        rvec = rvec/np.linalg.norm(rvec)
+        rvec_rot =R@rvec
+        Yl_unrot = Y2( rvec )
+        Yl_rot = Y2( rvec_rot )
+        Dl_R =  Y2.WignerD(a, b, c)
+        error = Yl_rot - np.conj(Dl_R)@Yl_unrot
+        print(f'L{l}: error = {np.abs(error).max()}')
+        if np.abs(error).max()>1e-10:
+            raise ValueError('Wigner D matrix error')
 
