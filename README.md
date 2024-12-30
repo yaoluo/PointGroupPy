@@ -1,2 +1,2 @@
 # PointGroupPy
-A pure python Group theory pacakge for point group. Useful for modeling of crystals and moleculars. 
+A pure Python package for group theory focused on point groups. Ideal for crystal and molecular modeling.
