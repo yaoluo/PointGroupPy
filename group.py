@@ -1,6 +1,7 @@
 import numpy as np
+from polynormial import polynomial_space
 
-class MatrixRepresentation:
+class MatrixGroup:
     def __init__(self, generator = []):
         """
         Initialize the matrix representation of a finite group.
@@ -101,28 +102,177 @@ class MatrixRepresentation:
       ConjClass = [[] for i in range(nClass)] 
       for i in range(nG):
           ConjClass[class_index[i]].append(i)
+
+      self.class_index = class_index
       self.ConjClass = ConjClass
       self.nClass = nClass
+      self.sClass = np.array([len(self.ConjClass[i]) for i in range(nClass)])
       print('class_index = ',class_index)
       return 
     
-if __name__ == '__main__':
+    def check_rep(self, Dg):
+        for c in self.ConjClass:
+            for a in c: 
+                if abs(np.trace(Dg[a])- np.trace(Dg[c[0]])) > 1e-10 :
+                    raise ValueError('This rep is inconsistent to the conjugacy class')
+        return 
+    #decompostion 
+    def decompose(self, Dg, chi_table):
+        # Dg, rep of G
+        
+        self.chi_table = chi_table
+        nClass = self.nClass 
+        chi_rep = np.asarray([np.trace(Dg[self.ConjClass[i][0]]) for i in range(nClass)])
 
+        # check conjclass 
+        self.check_rep(Dg)
+
+        #print('chi rep = ',chi_rep)
+        Multiplicity = np.asarray([ np.dot(chi_rep*self.sClass, np.conj(self.chi_table[:,i])) for i in range(nClass)])/len(self.G)
+        Multiplicity[np.abs(Multiplicity)<1e-10] = 0
+        #print('Multiplicity = ',Multiplicity)
+        if abs(np.sum(Multiplicity)-1)<1e-10:
+            print('This representation is already irreducible!')
+        return Multiplicity
+
+    def basis_function(self, Dg, chi_table):
+        nG, ndim, _ = Dg.shape 
+        Proj = np.zeros([self.nClass,ndim, ndim])
+        for ic in range(self.nClass):
+            for ig in range(nG):
+                Proj[ic] = Proj[ic] + chi_table[0, ic] * chi_table[self.class_index[ig], ic] * Dg[ig]
+        Proj = Proj / nG 
+        Si = []
+        for ic in range(self.nClass): 
+            evals, evec = np.linalg.eigh(Proj[ic])
+            #print('evals = ',evals[np.abs(evals)>1e-5])
+            Si.append(evec[:,np.abs(evals)>1e-5])
+        return Si
+    
+    def build_explicit_IRmatrix(self, chi_table):
+        self.chi_table = chi_table
+        names = self.name_IR()
+        Ls = [0,1,2,3,4,5,6,7,8,9] 
+        xl = [ polynomial_space( l = l) for l in Ls]
+        Multiplicity = []
+        for i in range(len(xl)):
+           xl[i].RepOfGroup(self)
+           Multiplicity.append(self.decompose(xl[i].polyG, chi_table))
+
+        print('Decompostion of Cartesian Harmonics = ')
+        for i in range(len(Multiplicity)):
+           print(f' l = {Ls[i]} = ',Multiplicity[i])
+
+        # identify the lowest basis function for one IR
+        reps_L = [] 
+        print(self.nClass)
+        for ir in range(self.nClass):
+           for i in range(len(xl)):
+              if abs(Multiplicity[i][ir]-1)<1e-5:
+                 reps_L.append(i)
+                 break 
+        if len(reps_L)!=self.nClass:
+            raise ValueError('Cartesian Harmonic up to l = 9 cannot cover the full IRs!')
+        print('reps_L = ',reps_L)
+
+        # build the invaraint subspace of each irredicuble representation 
+        # collect the basis function and matrix rep for each IR 
+        # for ir-th IR, we look at the rep in irreps_L[ir]
+        D_IR = [ np.zeros([self.nG, int(chi_table[0,i]+0.1), int(chi_table[0,i]+0.1)]) for i in range(self.nClass)]
+        for ir in range(self.nClass):
+            if( int(chi_table[0,ir]+0.1)==1 ):
+                for ig in range(self.nG):
+                    D_IR[ir][ig,0,0] = chi_table[self.class_index[ig],ir] 
+            else:
+                sym_f = self.basis_function(xl[reps_L[ir]].polyG, chi_table)
+                #f_ir transforms as the ir-th irreducible rep 
+                f_ir = sym_f[ir]
+                #polarize states in the z direction 
+                V = np.zeros([xl[reps_L[ir]].nbasis,xl[reps_L[ir]].nbasis])
+                #pick the maxium amplitude ones and add a potential to lift it.
+                amplitude = np.sum(f_ir**2, axis=1)
+                i_max = np.argmax(amplitude)
+                if abs(amplitude[-1]-amplitude[i_max])<1e-5:
+                    i_max = -1 
+                V[i_max, i_max] = 1
+            
+
+                eval, evc = np.linalg.eigh(f_ir.T@V@f_ir) 
+                f_ir = f_ir@evc
+                for i in range(len(f_ir[0])):
+                    # choose a positive convention 
+                    f_ir[:,i] = np.sign( f_ir[np.argmax(np.abs(f_ir[:,i])), i] ) * f_ir[:,i]
+                print(f'----------------------------------')
+                print(f'{ir}-th IR, basis = {names[ir]}')
+                for i in range(int(chi_table[0,ir]+0.1)):
+                   xl[reps_L[ir]].print_poly(f_ir[:,i])
+                
+                for ig in range(self.nG):
+                   D_IR[ir][ig] = f_ir.T@xl[reps_L[ir]].polyG[ig]@f_ir 
+            self.D_IR = D_IR
+
+    def name_IR(self):
+        Names = [] 
+        for ir in range(self.nClass):
+            s = ""
+            if abs(self.chi_table[0,ir]-1)<1e-5:
+                s = s+'A/B'
+            if abs(self.chi_table[0,ir]-2)<1e-5:
+                s = s+'E'
+            if abs(self.chi_table[0,ir]-3)<1e-5:
+                s = s+'T'
+            sigma_d = np.array([[0,1,0],[1,0,0],[0,0,1]])
+            for ig, g in enumerate(self.G):
+                if np.abs(g - sigma_d).max()<1e-5:
+                    if self.chi_table[self.class_index[ig],ir]>0:
+                        s = s+'_d=+'
+                    else:
+                        s = s+'_d=-'
+                    break 
+            sigma_v = np.array([[-1,0,0],[0,1,0],[0,0,1]])
+            for ig, g in enumerate(self.G):
+                if np.abs(g - sigma_v).max()<1e-5:
+                    if self.chi_table[self.class_index[ig],ir]>0:
+                        s = s+'_v=+'
+                    else:
+                        s = s+'_v=-'
+                    break 
+            sigma_h = np.array([[1,0,0],[0,1,0],[0,0,-1]])
+            for ig, g in enumerate(self.G):
+                if np.abs(g - sigma_h).max()<1e-5:
+                    if self.chi_table[self.class_index[ig],ir]>0:
+                        s = s+'_h=+'
+                    else:
+                        s = s+'_h=-'
+                    break 
+            inv = np.array([[-1,0,0],[0,-1,0],[0,0,-1]])
+            for ig, g in enumerate(self.G):
+                if np.abs(g - inv).max()<1e-5:
+                    if self.chi_table[self.class_index[ig],ir]>0:
+                        s = s+'_g'
+                    else:
+                        s = s+'_u'
+                    break 
+            Names.append(s)
+        return Names
+if __name__ == '__main__':
    for n in [4]:
       th = 2*np.pi/n
       Id = np.array([[1,0],[0,1]])
       R90 = np.array([[np.cos(th), -np.sin(th)],[np.sin(th),np.cos(th)]])
-      Cn = MatrixRepresentation(generator = [Id,R90])
+      Cn = MatrixGroup(generator = [Id,R90])
       print(f'|C{n}| = {Cn.nG}')
       if Cn.nG!=n:
           raise ValueError('# of elements in Cn is inconsistent')
       Cn.constructMultiplicationTable()
+
    #C4v 
+   Id = np.array([[1,0],[0,1]])
    th = np.pi/2
    R90 = np.array([[np.cos(th), -np.sin(th)],[np.sin(th),np.cos(th)]])
    sigma_v = np.array([[-1,0],[0,1]])
    sigma_d = np.array([[0,1],[1,0]])
-   C4v = MatrixRepresentation(generator = [Id,R90,sigma_v,sigma_d])
+   C4v = MatrixGroup(generator = [Id,R90,sigma_v,sigma_d])
    print(f'|C4v| = {C4v.nG}')
    if C4v.nG!=8:
       raise ValueError('# of elements in C4v is inconsistent')
@@ -132,12 +282,16 @@ if __name__ == '__main__':
       raise ValueError('# of conjugacy classes in C4v is inconsistent')
    print('C4v ConjClass = ',C4v.ConjClass)
 
-
+   #
    from BDS import character_solver
-   BDSsolver = character_solver(C4v.Table, C4v.ConjClass)
-   chi = BDSsolver.solve()
-   chi[np.abs(chi) < 1e-4] = 0
-
+   ChiSolver = character_solver(C4v.Table, C4v.ConjClass)
+   chi_table = ChiSolver.solve()
+   chi_table[np.abs(chi_table) < 1e-4] = 0
    print('Character table of C4v = ')
    for i in range(C4v.nClass):
-      print(" ".join(f"{x:10.2f}" for x in chi[:,i]))  # Format numbers to 2 decimal places
+      print(" ".join(f"{x:10.2f}" for x in chi_table[:,i]))  # Format numbers to 2 decimal places
+   #apply C4v to the polynomial of (x,y)
+
+   # build the matrix representtaion of C4v on linear function of (x,y)
+   # Here, it is coincidently the same as the original C4v, for cubic or quadratic, it will be different. 
+   C4v.decompose(chi_table)

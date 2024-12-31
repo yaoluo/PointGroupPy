@@ -33,6 +33,77 @@ def R_from_abc(alpha, beta, gamma):
     ])
     return matrix  # Return the rotation matrix
 
+def R_X(alpha):
+    """
+    Generate the rotation matrix using the XYZ proper Euler convention.
+
+    Parameters
+    ----------
+    alpha : float
+        The first Euler angle (rotation about the x-axis).
+    Returns
+    -------
+    numpy.ndarray
+        The 3x3 rotation matrix corresponding to the given Euler angles.
+    """
+    c_a = np.cos(alpha)
+    s_a = np.sin(alpha)
+
+    # Construct the matrix
+    matrix = np.array([[1, 0, 0],
+                       [0, c_a, -s_a],
+                       [0, s_a, c_a]
+                       ])
+    return matrix 
+
+def R_Y(alpha):
+    """
+    Generate the rotation matrix using the XYZ proper Euler convention.
+
+    Parameters
+    ----------
+    alpha : float
+        The first Euler angle (rotation about the x-axis).
+    Returns
+    -------
+    numpy.ndarray
+        The 3x3 rotation matrix corresponding to the given Euler angles.
+    """
+    c_a = np.cos(alpha)
+    s_a = np.sin(alpha)
+
+    # Construct the matrix
+    matrix = np.array([[c_a, 0, s_a],
+                       [0, 1, 0],
+                       [-s_a, 0, c_a]
+                       ])
+    return matrix 
+
+
+def R_Z(alpha):
+    """
+    Generate the rotation matrix using the XYZ proper Euler convention.
+
+    Parameters
+    ----------
+    alpha : float
+        The first Euler angle (rotation about the x-axis).
+    Returns
+    -------
+    numpy.ndarray
+        The 3x3 rotation matrix corresponding to the given Euler angles.
+    """
+    c_a = np.cos(alpha)
+    s_a = np.sin(alpha)
+
+    # Construct the matrix
+    matrix = np.array([[c_a, -s_a, 0],
+                       [s_a, c_a, 0],
+                       [0, 0, 1]
+                       ])
+    return matrix 
+
+
 def abc_from_R(R):
     """
     Compute the proper Euler angles in the XZX convention given a rotation matrix.
