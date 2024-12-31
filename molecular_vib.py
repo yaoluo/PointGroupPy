@@ -74,6 +74,34 @@ class vibration_space:
       plt.ylim([-2,2])
       plt.show()
       return 
+
+   def visualize_mode_3D(self, a, clist=['r','g','b','k']):
+      ph = a.reshape(-1,3)
+      
+      fig = plt.figure()
+      ax = fig.add_subplot(111, projection='3d')
+
+      for ia in range(self.molecular['na']):
+         origin = self.molecular['position'][ia]
+         vector = ph[ia]
+         # Plot the vector using plt.quiver
+
+         # Plot the vector using quiver
+         ax.quiver(
+             origin[0], origin[1], origin[2],  # Origin x, y, z
+             vector[0], vector[1], vector[2],  # Vector x, y, z components
+             color=clist[self.molecular['type'][ia]], label='Vector'
+         )
+         ax.scatter(
+            origin[0], origin[1], origin[2],  # Coordinates of the point
+            color=clist[self.molecular['type'][ia]], s=50, label='Point', marker='o'  # Customize color, size, and marker
+         )
+
+      plt.axis('equal')
+      plt.xlim([-2,2])
+      plt.ylim([-2,2])
+      #plt.show()
+      return ax 
    
 if __name__ == '__main__':
    # case study, a 2D square molecuar of symmetry C4v 
