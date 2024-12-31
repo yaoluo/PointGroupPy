@@ -20,7 +20,7 @@ class MatrixGroup:
 
     def constructMultiplicationTable(self):
          nG = self.nG
-         Table = np.zeros([nG, nG]).astype(np.int32)
+         MultilicationTable = np.zeros([nG, nG]).astype(np.int32)
          for i, gi in enumerate(self.G):
             G_prime = np.einsum('iab,bc->iac',self.G, gi)
             for j, gigj in enumerate(G_prime):
@@ -28,23 +28,23 @@ class MatrixGroup:
                k = np.argmin(np.einsum('iab->i',(self.G - gigj)**2))
                if( np.sum((self.G[k] - gigj)**2) >1e-10):
                    raise ValueError('gi*G not equal G')
-               Table[i,j] = k
-         self.Table = Table  
-         print(Table)
+               MultilicationTable[i,j] = k
+         self.MultilicationTable = MultilicationTable  
+         print(MultilicationTable)
          # identify identity 
          for i in range(nG):
-            if np.max(np.abs(Table[i]-np.arange(nG)))==0:
+            if np.max(np.abs(MultilicationTable[i]-np.arange(nG)))==0:
                 self.E = i
          print(f'E = {self.E}')
          # construct invG 
          index_invG = np.zeros(nG).astype(np.int32)
          for i in range(nG):
             for j in range(nG):
-                if Table[i,j] == self.E:
+                if MultilicationTable[i,j] == self.E:
                     index_invG[i] = j
                     index_invG[j] = i
          self.index_invG = index_invG
-         print(f'invG = {index_invG}')
+         #print(f'invG = {index_invG}')
     
     def generate_G(self, generators):
         self.G = np.asanyarray(generators)
@@ -94,8 +94,8 @@ class MatrixGroup:
                gi = self.G[i] 
                for j in range(nG):
                   #find G[k] = gi*gj 
-                  k_gigj = self.Table[i,j]
-                  i_invgj_gi_gj = self.Table[self.index_invG[j],k_gigj]
+                  k_gigj = self.MultilicationTable[i,j]
+                  i_invgj_gi_gj = self.MultilicationTable[self.index_invG[j],k_gigj]
                   class_index[i_invgj_gi_gj] = ith_conjugacy
                ith_conjugacy += 1
       nClass = np.max(class_index)+1
@@ -107,7 +107,7 @@ class MatrixGroup:
       self.ConjClass = ConjClass
       self.nClass = nClass
       self.sClass = np.array([len(self.ConjClass[i]) for i in range(nClass)])
-      print('class_index = ',class_index)
+      #print('class_index = ',class_index)
       return 
     
     def check_rep(self, Dg):
@@ -119,7 +119,6 @@ class MatrixGroup:
     #decompostion 
     def decompose(self, Dg, chi_table):
         # Dg, rep of G
-        
         self.chi_table = chi_table
         nClass = self.nClass 
         chi_rep = np.asarray([np.trace(Dg[self.ConjClass[i][0]]) for i in range(nClass)])
@@ -135,17 +134,29 @@ class MatrixGroup:
             print('This representation is already irreducible!')
         return Multiplicity
 
-    def basis_function(self, Dg, chi_table):
+    def basis_function(self, Dg, chi_table, excluded_space = []):
+        #excluded_space = size of [*, nbasis]
+        #
         nG, ndim, _ = Dg.shape 
         Proj = np.zeros([self.nClass,ndim, ndim])
         for ic in range(self.nClass):
             for ig in range(nG):
                 Proj[ic] = Proj[ic] + chi_table[0, ic] * chi_table[self.class_index[ig], ic] * Dg[ig]
         Proj = Proj / nG 
+        if len(excluded_space)!=0:
+            # make sure that excluded_space is orth-normal basis 
+            I = excluded_space@excluded_space.T 
+            e = np.max(np.abs(I - np.eye(len(I))))
+            if e > 1e-10:
+                raise ValueError('excluded_space is not orth-norm basis! Please do your own homework.')
+            proj_out =  excluded_space.T@excluded_space
+            for ic in range(self.nClass): 
+                Proj[ic] = Proj[ic] - Proj[ic]@proj_out
+
         Si = []
         for ic in range(self.nClass): 
             evals, evec = np.linalg.eigh(Proj[ic])
-            #print('evals = ',evals[np.abs(evals)>1e-5])
+            evec[np.abs(evec)<1e-10] = 0
             Si.append(evec[:,np.abs(evals)>1e-5])
         return Si
     
@@ -159,7 +170,7 @@ class MatrixGroup:
            xl[i].RepOfGroup(self)
            Multiplicity.append(self.decompose(xl[i].polyG, chi_table))
 
-        print('Decompostion of Cartesian Harmonics = ')
+        print('Decompostion of Cartesian Harmonics in the IRs = ')
         for i in range(len(Multiplicity)):
            print(f' l = {Ls[i]} = ',Multiplicity[i])
 

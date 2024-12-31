@@ -42,7 +42,5 @@ for i in range(len(xl)):
 print('sigma_d = \n',Oh.G[4])
 xl[0].print_poly(np.ones(6))
 print('sigma_d = \n',xl[0].polyG[4])
-
 print('sigma_d_ = \n',Oh.D_IR[6][4])
-
 print('char(sigma_d) = \n',chi_table[Oh.class_index[4],6])

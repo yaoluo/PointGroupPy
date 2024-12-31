@@ -7,7 +7,7 @@ class polynomial_space:
       self.l = l 
       if self.dim ==3:
          self.nbasis = int((self.l+2) * (self.l+1) /2)
-      print(f'nbasis = {self.nbasis}') 
+      #print(f'nbasis = {self.nbasis}') 
       lxlylz = [] 
       for lz in range(self.l + 1):
         for ly in range(self.l-lz+1):
@@ -32,16 +32,17 @@ class polynomial_space:
          for i in range(3):
             for j in range(3):
                if abs(R[i,j])>1e-10:
-                  mapping[i] = j
+                  #map j to mapping[j]
+                  mapping[j] = i
                  
          for i_lxlylz, lxlylz in enumerate(self.lxlylz_set):
             Rlxlylz = np.zeros(3).astype(np.int32)
             factor = 1  
             for i in range(3):
                Rlxlylz[mapping[i]] = lxlylz[i] 
-               factor = factor * (R[i,mapping[i]])**(lxlylz[i])
+               factor = factor * (R[mapping[i],i]) ** (lxlylz[i])
             i_Rlxlylz = np.argmin(np.einsum('ia->i',np.abs(self.lxlylz_set - Rlxlylz)))
-            Dpoly[i_lxlylz,i_Rlxlylz] = factor 
+            Dpoly[i_Rlxlylz, i_lxlylz] = factor 
       else:
          raise ValueError('Rotation matrix with elemement |R_{ij}| !=1, not surpported. ')
       return Dpoly 
@@ -89,6 +90,7 @@ class polynomial_space:
                   formula = formula + f'z^{lxlylz[2]}'
       print(formula)
       return 
+   
 if __name__ == '__main__':
    x1 = polynomial_space( l = 1)
    x2 = polynomial_space( l = 2)

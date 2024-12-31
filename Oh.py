@@ -13,17 +13,16 @@ sigma_d = np.array([[0,1,0],[1,0,0],[0,0,1]])
 Oh = MatrixGroup(generator = [Id,Rx90,Ry90,Rz90,sigma_d])
 print(f'|Oh| = {Oh.nG}')
 if Oh.nG!=48:
-   raise ValueError('# of elements in C4v is inconsistent')
+   raise ValueError('# of elements in Oh is inconsistent')
 Oh.constructMultiplicationTable()
 Oh.conjugacy_class()
 if Oh.nClass!=10:
-   raise ValueError('# of conjugacy classes in C4v is inconsistent')
-print('C4v ConjClass = ',Oh.ConjClass)
+   raise ValueError('# of conjugacy classes in Oh is inconsistent')
+print('Oh ConjClass = ',Oh.ConjClass)
 #
 from BDS import character_solver
-ChiSolver = character_solver(Oh.Table, Oh.ConjClass)
+ChiSolver = character_solver(Oh.MultilicationTable, Oh.ConjClass)
 chi_table = ChiSolver.solve()
-chi_table[np.abs(chi_table) < 1e-4] = 0
 print('Character table of Oh = ')
 for i in range(Oh.nClass):
    print(" ".join(f"{x:10.2f}" for x in chi_table[:,i]))  # Format numbers to 2 decimal places

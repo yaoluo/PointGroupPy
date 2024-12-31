@@ -81,6 +81,8 @@ class character_solver:
          rank[i] = chi[0,i] * nClass * 2 + nClass - np.sum(chi[:,i])
       
       chi = chi[:,np.argsort(rank)]
+
+      chi[np.abs(chi) < 1e-4] = 0
       return chi 
    
    
