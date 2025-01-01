@@ -134,15 +134,29 @@ class MatrixGroup:
             print('This representation is already irreducible!')
         return Multiplicity
 
+    def projector_Iu(self, Dg, Dg_IR):
+        # project phi to IR basis |Iu>
+        Proj_Iu = np.einsum('iab,icd->acd',Dg_IR,Dg) / self.nG
+        return Proj_Iu
+    
+    def projector_I(self, Dg, Dg_IR):
+        nG,dim,_ = Dg_IR.shape 
+        chi = np.trace(Dg_IR, axis1=1,axis2=2)
+        Proj_I = np.einsum('i,iab->ab',chi*chi[0], Dg) / self.nG
+        return Proj_I
+
     def basis_function(self, Dg, chi_table, excluded_space = []):
         #excluded_space = size of [*, nbasis]
         #
         nG, ndim, _ = Dg.shape 
+        #Proj = self.projector_I()
         Proj = np.zeros([self.nClass,ndim, ndim])
         for ic in range(self.nClass):
             for ig in range(nG):
                 Proj[ic] = Proj[ic] + chi_table[0, ic] * chi_table[self.class_index[ig], ic] * Dg[ig]
         Proj = Proj / nG 
+
+
         if len(excluded_space)!=0:
             # make sure that excluded_space is orth-normal basis 
             I = excluded_space@excluded_space.T 
@@ -159,6 +173,60 @@ class MatrixGroup:
             evec[np.abs(evec)<1e-10] = 0
             Si.append(evec[:,np.abs(evals)>1e-5])
         return Si
+    
+    def basis_function_break_multiplicity(self, Dg, chi_table, excluded_space = []):
+        #excluded_space = size of [*, nbasis]
+        #
+        nG, ndim, _ = Dg.shape 
+        Proj = np.zeros([self.nClass,ndim, ndim])
+        for ic in range(self.nClass):
+            Proj[ic] = self.projector_I(Dg, self.D_IR[ic])
+
+        if len(excluded_space)!=0:
+            # make sure that excluded_space is orth-normal basis 
+            I = excluded_space@excluded_space.T 
+            e = np.max(np.abs(I - np.eye(len(I))))
+            if e > 1e-10:
+                raise ValueError('excluded_space is not orth-norm basis! Please do your own homework.')
+            proj_out =  excluded_space.T@excluded_space
+            for ic in range(self.nClass): 
+                Proj[ic] = Proj[ic] - Proj[ic]@proj_out
+        basis_dict = {} 
+        i_sub = 0
+        for ic in range(self.nClass): 
+            evals, evec = np.linalg.eigh(Proj[ic])
+            evec[np.abs(evec)<1e-10] = 0
+            #
+            dim_chi = int(chi_table[0,ic]+1e-5)
+            # subspace of shape [dim, nbasis]
+            dim = int(sum(np.abs(evals)>1e-10)+1e-5)
+            multiplicity = int(dim / dim_chi+1e-5)
+            subspace = evec[:,np.abs(evals)>1e-5]
+            subspace[np.abs(subspace)<1e-10] = 0
+            if multiplicity==1:
+                basis_dict[f'{i_sub}-th subspace'] = {'IR index': ic, 'dimension': dim_chi ,'basis': np.transpose(subspace)}
+                i_sub += 1 
+            else:
+                #Proj_Iu of shape [dim_chi, nbasis, nbasis] 
+                
+                Proj_Iu = self.projector_Iu(Dg, self.D_IR[ic])
+                Projout_included = np.eye(len(Dg[0]))
+                for alpha in range(multiplicity):
+                    print('subspace.shape = ',subspace.shape, np.random.random(dim).shape)
+                    phi = subspace@(np.random.random(dim))  
+                    # project the states that are already tabulated   
+                    phi = Projout_included@phi
+                    subspace_seperate = []
+                    for mu in range(dim_chi):
+                        phi_u = Proj_Iu[mu]@phi
+                        phi_u = phi_u/np.linalg.norm(phi_u)
+                        phi_u[np.abs(phi_u)<1e-10] = 0
+                        subspace_seperate.append(phi_u.reshape(-1))
+                        Projout_included = Projout_included - np.einsum('i,j->ij', phi_u,phi_u)
+                    basis_dict[f'{i_sub}-th subspace'] = {'IR index': ic, 'dimension': dim_chi ,'basis': np.asarray(subspace_seperate)}
+                    i_sub += 1
+
+        return basis_dict
     
     def build_explicit_IRmatrix(self, chi_table):
         self.chi_table = chi_table
@@ -206,8 +274,7 @@ class MatrixGroup:
                 if abs(amplitude[-1]-amplitude[i_max])<1e-5:
                     i_max = -1 
                 V[i_max, i_max] = 1
-            
-
+        
                 eval, evc = np.linalg.eigh(f_ir.T@V@f_ir) 
                 f_ir = f_ir@evc
                 for i in range(len(f_ir[0])):
@@ -220,8 +287,15 @@ class MatrixGroup:
                 
                 for ig in range(self.nG):
                    D_IR[ir][ig] = f_ir.T@xl[reps_L[ir]].polyG[ig]@f_ir 
-            self.D_IR = D_IR
+        self.D_IR = D_IR
 
+        #check the trace 
+        for ig in range(self.nG):
+            for ic in range(self.nClass):
+                e = np.max(np.abs(np.trace(D_IR[ic][ig]) - chi_table[self.class_index[ig],ic]))
+                #print(e)
+                if e> 1e-5:
+                    raise ValueError('trace error')
     def name_IR(self):
         Names = [] 
         for ir in range(self.nClass):
