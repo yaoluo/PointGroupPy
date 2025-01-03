@@ -28,7 +28,7 @@ if Oh.nClass!=10:
    raise ValueError('# of conjugacy classes in Oh is inconsistent')
 print('Oh ConjClass = ',Oh.ConjClass)
 #
-from BDS import character_solver
+from BDS_solver import character_solver
 ChiSolver = character_solver(Oh.MultilicationTable, Oh.ConjClass)
 chi_table = ChiSolver.solve()
 print('Character table of Oh = ')

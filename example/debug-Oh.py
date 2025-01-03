@@ -21,7 +21,7 @@ if Oh.nClass!=10:
    raise ValueError('# of conjugacy classes in C4v is inconsistent')
 print('C4v ConjClass = ',Oh.ConjClass)
 #
-from BDS import character_solver
+from BDS_solver import character_solver
 ChiSolver = character_solver(Oh.Table, Oh.ConjClass)
 chi_table = ChiSolver.solve()
 chi_table[np.abs(chi_table) < 1e-4] = 0

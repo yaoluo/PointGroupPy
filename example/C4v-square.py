@@ -26,7 +26,7 @@ if C4v.nClass!=5:
    raise ValueError('# of conjugacy classes in C4v is inconsistent')
 print('C4v ConjClass = ',C4v.ConjClass)
 #
-from BDS import character_solver
+from BDS_solver import character_solver
 ChiSolver = character_solver(C4v.MultilicationTable, C4v.ConjClass)
 chi_table = ChiSolver.solve()
 print('Character table of C4v = ')

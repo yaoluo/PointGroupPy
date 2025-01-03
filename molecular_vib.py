@@ -90,7 +90,7 @@ class vibration_space:
          ax.quiver(
              origin[0], origin[1], origin[2],  # Origin x, y, z
              vector[0], vector[1], vector[2],  # Vector x, y, z components
-             color=clist[self.molecular['type'][ia]], label='Vector'
+             color=clist[self.molecular['type'][ia]]
          )
          ax.scatter(
             origin[0], origin[1], origin[2],  # Coordinates of the point
@@ -130,7 +130,7 @@ if __name__ == '__main__':
    print('C4v ConjClass = ',C4v.ConjClass)
 
    #
-   from BDS import character_solver
+   from BDS_solver import character_solver
    ChiSolver = character_solver(C4v.MultilicationTable, C4v.ConjClass)
    chi_table = ChiSolver.solve()
    print('Character table of C4v = ')
