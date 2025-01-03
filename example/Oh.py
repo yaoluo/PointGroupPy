@@ -1,5 +1,7 @@
 # case study of Oh point group 
 import numpy as np 
+import sys 
+sys.path.append('../')
 from group import MatrixGroup
 from spherical import R_X, R_Y, R_Z 
 

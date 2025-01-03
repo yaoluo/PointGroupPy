@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import sys 
+sys.path.append('../')
 from molecular_vib import vibration_space
 
 # case study, a 2D square molecuar of symmetry C4v 
