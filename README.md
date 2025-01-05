@@ -1,17 +1,19 @@
 # PointgroupPy
 
-PointgroupPy is a general-purpose Python library for group-theoretical calculations. It is designed to automate the generation of symmetry-adapted basis functions and the computation of Clebsch-Gordan coefficients for any finite group using the following core features:
+PointgroupPy is a general-purpose Python library for group-theoretical calculations for symmetry analysis of moleculars and crystals. It is designed to automate the generation of symmetry-adapted basis functions and the computation of Clebsch-Gordan coefficients for any finite group using the following core features:
 
 ## Features
 
 ### Generality and Automation
-- **General for Any Point Group**: The library leverages the BDS algorithm to solve character tables, making it applicable to any point group.
+- **General for Any Point Group**: The library leverages the Burnside–Dixon–Schneider (BDS) method from computational representation theory to solve character tables, making it applicable to any finite group. 
 - **Automatic Symmetry-Adapted Basis Functions**: By using projection operators from the group ring, the symmetry-adapted basis functions are constructed seamlessly. Users only need to specify the generators of the point group in matrix form.
 - **Symmetric Clebsch-Gordan Coefficients**: The library calculates the Clebsch-Gordan coefficients for any finite group based on projection operators, making it useful for a variety of applications in physics and materials science.
+- **Symmetry-adapted Polynomials in (x, y, z)**: The library supports finding polynomials in (x, y, z) that transform as irreducible representations of the given point group.
+- **Symmetry-adapted Atomic Vibrational Modes**: The library supports identifying atomic vibration modes that transform as irreducible representations of the given point group. 
 
 ### User-Friendly Design
 - Minimal input: Provide the point group generators in matrix form, and everything else is generated automatically.
-- Intuitive: Designed to be straightforward and easy to integrate into existing workflows.
+- Intuitive: Designed to be straightforward and easy to integrate into materials modeling. 
 
 ## Applications
 PointgroupPy can be used in:
@@ -30,26 +32,27 @@ cd PointgroupPy
 pip install . 
 ```
 ### Dependencies
-PointgroupPy requires the following Python libraries:
+PointgroupPy requires minimal Python libraries:
 - `numpy`
 - `matplotlib`
   
-  
+
 ### Usage
 
 1. **Input Generators**: Define the generators of the point group in matrix form.
 2. **Run Calculations**:
    - Generate the character table.
-   - Construct symmetry-adapted basis functions.
-   - Compute Clebsch-Gordan coefficients.
+   - Construct symmetry-adapted basis functions / invariant subspace. 
+   - Compute Clebsch-Gordan coefficients for any finite group.
 
-Example:
+### Example: Automatic Solving of the Character Table
+This example demonstrates automatic solving of the character table based solely on the matrix multiplication table (independent of the matrix representation).
+
 ```python
 # case study of Oh point group 
 import numpy as np 
 from PointGroupPy import MatrixGroup
 from PointGroupPy import R_X, R_Y, R_Z 
-from PointGroupPy import vibration_space
 
 #Oh 
 Id = np.eye(3)
@@ -78,7 +81,8 @@ for i in range(Oh.nClass):
 ```
 
 ## Reference
-The implementation is based on the techniques outlined in [Phys. Rev. B 90, 014308 (2014)](https://doi.org/10.1103/PhysRevB.90.014308), particularly the projection operator methods for constructing irreducible representations.
+Burnside–Dixon–Schneider (BDS) method follows this [lecture note](http://www.math.rwth-aachen.de/~hiss/Presentations/Galway08_Lec1.pdf). 
+
 
 ## Contributing
 Contributions are welcome! Please feel free to fork this repository and submit pull requests.
