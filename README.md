@@ -78,7 +78,23 @@ chi_table = ChiSolver.solve()
 print('Character table of Oh = ')
 for i in range(Oh.nClass):
    print(" ".join(f"{x:10.2f}" for x in chi_table[:,i]))  # Format numbers to 2 decimal places
+
+#output 
+# ... 
+#Character table of Oh = 
+#      1.00       1.00       1.00       1.00       1.00       1.00       1.00       1.00       1.00       1.00
+#      1.00      -1.00      -1.00       1.00       1.00       1.00       1.00      -1.00      -1.00       1.00
+#      1.00      -1.00       1.00       1.00       1.00      -1.00      -1.00      -1.00       1.00      -1.00
+#      1.00       1.00      -1.00       1.00       1.00      -1.00      -1.00       1.00      -1.00      -1.00
+#      2.00       0.00       0.00       2.00      -1.00      -1.00       2.00       0.00       0.00       2.00
+#      2.00       0.00       0.00       2.00      -1.00       1.00      -2.00       0.00       0.00      -2.00
+#      3.00      -1.00       1.00      -1.00       0.00       0.00      -1.00       1.00      -1.00       3.00
+#      3.00       1.00      -1.00      -1.00       0.00       0.00      -1.00      -1.00       1.00       3.00
+#      3.00       1.00       1.00      -1.00       0.00       0.00       1.00      -1.00      -1.00      -3.00
+#      3.00      -1.00      -1.00      -1.00       0.00       0.00       1.00       1.00       1.00      -3.00
+# ...
 ```
+
 
 ## Reference
 Burnside–Dixon–Schneider (BDS) method follows this [lecture note](http://www.math.rwth-aachen.de/~hiss/Presentations/Galway08_Lec1.pdf). 
