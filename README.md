@@ -97,7 +97,9 @@ for i in range(Oh.nClass):
 
 
 ## Reference
-Burnside–Dixon–Schneider (BDS) method follows this [lecture note](http://www.math.rwth-aachen.de/~hiss/Presentations/Galway08_Lec1.pdf). 
+The projection operators are explained in this [lecture note](https://www.niu.edu/rwinkler/teaching/group-11/g-lecture.pdf) from Prof. Roland Winkler. 
+Burnside–Dixon–Schneider (BDS) method follows this [lecture note](http://www.math.rwth-aachen.de/~hiss/Presentations/Galway08_Lec1.pdf) from Prof. Gerhard Hiss. 
+
 
 
 ## Contributing
