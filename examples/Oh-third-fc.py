@@ -1,10 +1,13 @@
 # case study of Oh point group 
 import numpy as np 
-import sys 
-sys.path.append('../')
-from group import MatrixGroup
-from spherical import R_X, R_Y, R_Z 
-from molecular_vib import vibration_space
+#import sys 
+#import os 
+# Add the parent directory of `pointgpy` to sys.path
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
+
+from PointGroupPy import MatrixGroup
+from PointGroupPy import R_X, R_Y, R_Z 
+from PointGroupPy import vibration_space
 
 
 #[1] Oh: build character table and IR matrix rep  
@@ -24,7 +27,7 @@ if Oh.nClass!=10:
    raise ValueError('# of conjugacy classes in Oh is inconsistent')
 print('Oh ConjClass = ',Oh.ConjClass)
 #
-from BDS_solver import character_solver
+from PointGroupPy import character_solver
 ChiSolver = character_solver(Oh.MultilicationTable, Oh.ConjClass)
 chi_table = ChiSolver.solve()
 print('Character table of Oh = ')
@@ -51,7 +54,7 @@ print('# of V_Ia (# of invariant subspace) = ',len(V_Ia))
 n_Ia = len(V_Ia)
 
 # [3] build the ijk -> x CG coefficient for symmetric tensor product for A1g 
-from CGC_symmetricTP import symmetricTensorProduct
+from PointGroupPy import symmetricTensorProduct
 CGC_IJK = symmetricTensorProduct(Oh.D_IR)
 
 n_parameter = 0

@@ -1,5 +1,5 @@
 import numpy as np
-from polynormial import polynomial_space
+from .polynormial import polynomial_space
 from mpl_toolkits.mplot3d import Axes3D
 class MatrixGroup:
     def __init__(self, generator = []):
