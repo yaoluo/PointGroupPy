@@ -26,14 +26,18 @@ class symmetricTensorProduct:
          raise ValueError('Error : index_subspace should be in descending order')
       if index_subspace[1] < index_subspace[2]:
          raise ValueError('Error : index_subspace should be in descending order')
-
+      if index_subspace[0] == index_subspace[1] and I!=J:
+         raise ValueError('Error : I!=J while they are the same space')
+      if index_subspace[1] == index_subspace[2] and J!=K:
+         raise ValueError('Error : I!=J while they are the same space')
+      
       basis = []
       
       for i in range(d1):
          if index_subspace[0]==index_subspace[1]:
-            for j in range(i):
+            for j in range(i+1):
                if index_subspace[1]==index_subspace[2]:
-                  for k in range(j):
+                  for k in range(j+1):
                      basis.append([[index_subspace[0],I,i],[index_subspace[1],J,j],[index_subspace[2],K,k]])
                else:
                   for k in range(d3):
@@ -41,7 +45,7 @@ class symmetricTensorProduct:
          else:
             for j in range(d2):
                if index_subspace[1]==index_subspace[2]:
-                  for k in range(j):
+                  for k in range(j+1):
                      basis.append([[index_subspace[0],I,i],[index_subspace[1],J,j],[index_subspace[2],K,k]])
                else:
                   for k in range(d3):
@@ -50,12 +54,28 @@ class symmetricTensorProduct:
       Z = []
       for b in basis:
          if b[0][0] == b[1][0] and b[0][0] == b[2][0]:
-            Z.append(1.0) 
-         elif b[0][0] == b[1][0] or b[0][0] == b[2][0]:
-            Z.append(1.0/3)
+            uvs = np.asarray([b[0][2],b[1][2],b[2][2]]).astype(np.int32)
+            n_diff = len(np.unique(uvs))
+            #print(n_diff)
+            if n_diff==1:
+               Z.append(1.0) 
+            elif n_diff==2:
+               Z.append(1.0/3) 
+            else:
+               Z.append(1.0/6.0) 
+         elif b[0][0] == b[1][0] and b[0][0] != b[2][0]:
+            if b[0][2] == b[1][2]:
+               Z.append(1.0/3)
+            else:
+               Z.append(1.0/6)
+         elif b[0][0] != b[1][0] and b[0][0] == b[2][0]:
+            if b[0][2] == b[2][2]:
+               Z.append(1.0/3)
+            else:
+               Z.append(1.0/6)
          else:
             Z.append(1.0/6)
-
+            
       basis = np.asarray(basis).astype(np.int32)
       Z = np.asarray(Z)
       nbasis = len(basis)
@@ -64,12 +84,18 @@ class symmetricTensorProduct:
       for ig in range(nG):
          G1 = np.zeros([nbasis,nbasis])
          for i in range(nbasis):
+            p1 = basis[i]
             for j in range(nbasis):
-               for p1 in itertools.permutations(basis[i]):
-                  for p2 in itertools.permutations(basis[j]):
-                     if p1[0][0] == p2[0][0] and p1[1][0] == p2[1][0] and p1[2][0] == p2[2][0] :
-                        G1[i,j] += self.D_IR[p1[0][1]][ig,p1[0][2],p2[0][2]] * self.D_IR[p1[1][1]][ig,p1[1][2],p2[1][2]] * self.D_IR[p1[2][1]][ig,p1[2][2],p2[2][2]] / (36.0 * Z[i])
-         repG[ig] = G1
+               for p2 in itertools.permutations(basis[j]):   
+                  if p1[0][0] == p2[0][0] and p1[1][0] == p2[1][0] and p1[2][0] == p2[2][0] :
+                     G1[i,j] += self.D_IR[p1[0][1]][ig,p1[0][2],p2[0][2]] * self.D_IR[p1[1][1]][ig,p1[1][2],p2[1][2]] * self.D_IR[p1[2][1]][ig,p1[2][2],p2[2][2]]
+               # transforms to normalized basis 
+               G1[i,j]  = G1[i,j]  / np.sqrt(Z[i]*Z[j])
+            G1[i] = G1[i] / (6.0)
+         repG[ig] = G1 + 0
+         
+         
+         
       return basis, repG
  
    def build_ijkl_rep(self, I, J, K, L):

@@ -251,9 +251,15 @@ class MatrixGroup:
             Proj = Proj - Proj@proj_out
         basis_dict = {} 
         i_sub = 0
- 
+
+        Herr = np.max(np.abs(Proj - Proj.T))
+        if Herr > 1e-10:
+
+            print(f'Herr = {Herr}')
+            raise ValueError('Projection matrix is not hermition!')
         evals, evec = np.linalg.eigh(Proj)
         evec[np.abs(evec)<1e-10] = 0
+        
         #
         
         _,dim_chi,_ = D_IR.shape  
@@ -261,6 +267,10 @@ class MatrixGroup:
         dim = int(sum(np.abs(evals)>1e-10)+1e-5)
         multiplicity = int(np.sum(chi_IR * chi_G) / nG+1e-3)
        
+        if np.abs(np.sum(evals) - dim)>1e-5:
+            print(f'multiplicity = {np.sum(chi_IR * chi_G) / nG}')
+            print('evals = ',evals[np.abs(evals)>1e-10])
+            raise ValueError('Evals not one!')
         if multiplicity != int(dim / dim_chi+1e-5):
             raise ValueError('Error on multiplicity') 
 
@@ -353,13 +363,26 @@ class MatrixGroup:
                    D_IR[ir][ig] = f_ir.T@xl[reps_L[ir]].polyG[ig]@f_ir 
         self.D_IR = D_IR
 
-        #check the trace 
+        #check the trace of D_IR
         for ig in range(self.nG):
             for ic in range(self.nClass):
                 e = np.max(np.abs(np.trace(D_IR[ic][ig]) - chi_table[self.class_index[ig],ic]))
-                #print(e)
                 if e> 1e-5:
                     raise ValueError('trace error')
+                
+        # check the class sum 
+        for ir in range(self.nClass):
+            for ic in range(self.nClass):
+                I = np.zeros_like(D_IR[ir][0])
+                for ig in range(self.nG):
+                    if self.class_index[ig] == ic: 
+                        I = I + self.D_IR[ir][ig]
+                if np.abs(I[0,0])>1e-5:
+                    I = I / I[0,0]
+                    if np.max(np.abs(I - np.eye(len(D_IR[ir][0])))) > 1e-6:
+                        print(I)
+                        raise ValueError(f' for {ir}-IR {ic}-class, the class sum != c. Identity')
+                
     
     def name_IR(self):
         Names = [] 
