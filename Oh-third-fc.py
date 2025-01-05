@@ -49,7 +49,7 @@ da1g3 = 0
 for i in range(9):
    for j in range(9):
       for k in range(9):
-         basis, repG = CGC_IJK.build_ijk_rep(i,j,k)
+         basis, repG = CGC_IJK.build_ijk_rep(i,j,k, index_subspace=[2,1,0])
          CGC = Oh.basis_function_for_oneIR(
                               repG, 
                               Oh.D_IR[0]  # this is the A1g rep 
@@ -62,25 +62,5 @@ for i in range(9):
             print(f'{i} {j} {k}-> {len(CGC)} x 0')
             n3 += 1 
             da1g3 += len(CGC)
-
-#debug 
-n4 = 0 
-da1g4 = 0 
-for i in range(9):
-   for j in range(9):
-      for k in range(9):
-         for l in range(9):
-            basis, repG = CGC_IJK.build_ijkl_rep(i,j,k,l)
-            CGC = Oh.basis_function_for_oneIR(
-                                 repG, 
-                                 Oh.D_IR[0]  # this is the A1g rep 
-                                 )
-            if len(CGC)!=0:
-               print(f'{i} {j} {k} {l}-> {len(CGC)} x 0')
-               n4 += 1 
-               da1g4 += len(CGC)
-print(f'# triplet = {n3}, # of quad = {n4}')
-print(f'triplet, a1g dim = {da1g3}; quad, a1g dim = {da1g4}')
-
 
 
