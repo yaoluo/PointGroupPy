@@ -1,10 +1,17 @@
 # case study of Oh point group 
 import numpy as np 
+import sys 
+sys.path.append('../')
 from group import MatrixGroup
 from spherical import R_X, R_Y, R_Z 
 from molecular_vib import vibration_space
 
-
+# case study, a 3D Octahedral molecuar of symmetry Oh 
+molecular = {"na":7, 
+             "position":np.array([[0,0,0],[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]),
+             "type": [1,0,0,0,0,0,0]
+            }
+Octahedral  = vibration_space(molecular)
 #[1] Oh: build character table and IR matrix rep  
 Id = np.eye(3)
 th = np.pi/2
@@ -34,40 +41,35 @@ for i in range(Oh.nClass):
 Oh.decompose(Oh.G, chi_table)
 Oh.build_explicit_IRmatrix(chi_table)
 
-# [2]
-# case study, a 3D Octahedral molecuar of symmetry Oh 
-molecular = {"na":7, 
-             "position":np.array([[0,0,0],[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]]),
-             "type": [1,0,0,0,0,0,0]
-            }
-Octahedral  = vibration_space(molecular)
-Octahedral.RepOfGroup(Oh)
-Multiplicity = Oh.decompose(Octahedral .G, chi_table)
-print('Multiplicity = ',Multiplicity)
-V_Ia = Oh.basis_function_break_multiplicity(Octahedral .G, chi_table, excluded_space=Octahedral .acoustic_translation_mode())
-print('# of V_Ia (# of invariant subspace) = ',len(V_Ia)) 
-n_Ia = len(V_Ia)
-
-# [3] build the ijk -> x CG coefficient for symmetric tensor product for A1g 
+# [2] build the ijk -> x CG coefficient for symmetric tensor product for A1g 
 from CGC_symmetricTP import symmetricTensorProduct
 CGC_IJK = symmetricTensorProduct(Oh.D_IR)
 
-n_parameter = 0
-for i in range(n_Ia):
-   for j in range(i+1):
-      for k in range(j+1):
-         #print(i,j,k)
-         I = V_Ia[f'{i}-th subspace']['IR index']
-         J = V_Ia[f'{j}-th subspace']['IR index']
-         K = V_Ia[f'{k}-th subspace']['IR index']
 
-         basis, repG = CGC_IJK.build_ijk_rep(I,J,K, index_subspace=[i,j,k])
-         #print(I,J,K,i,j,k )
+#debug 
+basis, repG = CGC_IJK.build_ijk_rep(4,4,4, index_subspace=[2,2,2])
+CGC = Oh.basis_function_for_oneIR(
+                     repG, 
+                     Oh.D_IR[0]  # this is the A1g rep 
+                     )
+'''
+n3 = 0 
+da1g3 = 0 
+for i in range(9):
+   for j in range(9):
+      for k in range(9):
+         basis, repG = CGC_IJK.build_ijk_rep(i,j,k, index_subspace=[2,1,0])
          CGC = Oh.basis_function_for_oneIR(
                               repG, 
-                              Oh.D_IR[0]  
+                              Oh.D_IR[0]  # this is the A1g rep 
                               )
+         if i!=j and k==0 and len(CGC)!=0:
+            raise ValueError(f'error for {i}!={j}')
+         if i==j and k==0 and len(CGC)!=1:
+            raise ValueError(f'error for {i}={j}')
          if len(CGC)!=0:
             print(f'{i} {j} {k}-> {len(CGC)} x 0')
-            n_parameter = n_parameter + len(CGC)
-print(f'n_parameter = {n_parameter}')
+            n3 += 1 
+            da1g3 += len(CGC)
+'''
+# 
